@@ -24,6 +24,7 @@ async function run(){
       const carCollection = database.collection("carInfo")
       const myCollection = database.collection('myorderinfo')
       const reviewCollection= database.collection('review')
+      const userCollection = database.collection('users')
 
       app.post('/addproduct',async(req,res)=>{
         const product = req.body;
@@ -47,6 +48,39 @@ async function run(){
         console.log(result)
         res.json(result)
       })
+      
+      app.post('/users',async(req,res)=>{
+        const user = req.body;
+        const result = await userCollection.insertOne(user)
+        console.log(result)
+        res.json(result)
+      })
+
+
+
+      app.put('/users/admin',async(req,res)=>{
+        const user = req.body;
+        console.log(user)
+        const filter = {email:user.email};
+        const updateDoc = {$set:{role:'admin'}}
+        const result = await userCollection.updateOne(filter,updateDoc)
+        res.json(result)
+      })
+
+
+      app.get('/users/:email',async(req,res)=>{
+        const email = req.params.email;
+        const query ={email:email};
+        const user=await userCollection.findOne(query);
+        let isAdmin =false;
+        if(user?.role==='admin'){
+          isAdmin=true;
+        }
+
+        res.json({admin:isAdmin});
+
+      })
+
 
       app.get('/myorder',async(req,res)=>{
         const email = req.query.email;
@@ -54,6 +88,12 @@ async function run(){
         const cursor =await myCollection.find(query)
         const myorder = await cursor.toArray();
         res.json(myorder)
+      })
+
+      app.get('/manageorder',async(req,res)=>{
+        const cursor = await myCollection.find({})
+        const allOrder = await cursor.toArray();
+        res.json(allOrder);
       })
 
 
@@ -81,6 +121,14 @@ async function run(){
   app.delete("/deletorder/:id", async (req, res) => {
     console.log(req.params.id);
     const result = await myCollection.deleteOne({
+      _id: ObjectId(req.params.id),
+    });
+    res.send(result);
+  });
+
+  app.delete("/explore/:id", async (req, res) => {
+    console.log(req.params.id);
+    const result = await carCollection.deleteOne({
       _id: ObjectId(req.params.id),
     });
     res.send(result);
